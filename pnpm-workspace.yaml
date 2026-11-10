@@ -1,0 +1,8 @@
+# pnpm settings for this single-package repo (no `packages` field: the root is the only project).
+# Script-free install policy: esbuild ships its binary via platform optionalDependencies
+# (@esbuild/linux-x64; its postinstall only re-downloads a fallback) and protobufjs is the only
+# package in onnxruntime-web's tree with an install hook (it only prints a version WARN).
+# Note: `pnpm approve-builds` writes its decisions into this file too.
+allowBuilds:
+  esbuild: false
+  protobufjs: false

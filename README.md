@@ -378,7 +378,7 @@ Model provenance of the end-to-end rows:
 - **The low CORD `item.name` score is a measured parser defect, not Indonesian being hard.** Of 82 name misses among paired dev items, 80 have the gold tokens as a strict subset of the prediction and 70 of those surplus tokens are digits — the printed quantity folded into the name when continuation rows merge. The metric is flat across τ 0.50–0.90, so it is not a threshold effect. Diagnosed in `DECISIONS/0015` M-4, artifact `benchmarks/results/diagnostic-item-names-cord-v2-dev.json`; owned by tickets 05/06.
 - **Neither mode is a strict ceiling on the other.** Reference OCR carries no recognition noise, which is why parser-only isolates the parser — but the two modes also differ in line grouping, so real OCR can occasionally group a receipt better than the reference fixtures do: measured on SROIE eval, 62.9% with Small against 60.7% parser-only (`DECISIONS/0014` M8).
 
-Re-derive a row: `pnpm measure:accuracy -- --split dev` (parser-only, CI-runnable, no dataset download) or `pnpm run:end-to-end -- --tier tiny --split dev` (local, needs `benchmarks/datasets/raw/`), then `node benchmarks/scripts/render-accuracy-table.mjs --write`.
+Re-derive these numbers in the full repository: [github.com/geko-rgb/receipt-lens](https://github.com/geko-rgb/receipt-lens) (`pnpm measure:accuracy`, `pnpm run:end-to-end`, `node benchmarks/scripts/render-accuracy-table.mjs --write`).
 
 <!-- accuracy:end -->
 
@@ -582,7 +582,7 @@ What the artifact says against that cell: the mechanism this ticket supplies is 
 - not measured: parse() and validate() separately: they run inside firstResultMs and cannot be split without a hook the shipped bundle does not have
 - not measured: PP-OCRv6 Small, quantized builds, or a lazy/deferred model load (1E.3, ticket 09b, R2 contingencies)
 
-Re-derive it: `node benchmarks/scripts/measure-footprint.mjs && node benchmarks/scripts/render-footprint-table.mjs --write`.
+Re-derive this block in the full repository: [github.com/geko-rgb/receipt-lens](https://github.com/geko-rgb/receipt-lens) (`node benchmarks/scripts/measure-footprint.mjs && node benchmarks/scripts/render-footprint-table.mjs --write`).
 <!-- footprint:end -->
 
 ## Privacy

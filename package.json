@@ -57,12 +57,6 @@
   "dependencies": {
     "onnxruntime-web": "^1.31.1"
   },
-  "pnpm": {
-    "allowBuilds": {
-      "esbuild": false,
-      "protobufjs": false
-    }
-  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
