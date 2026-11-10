@@ -39,7 +39,9 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "src",
+    "README.md",
+    "!src/**/*.test.ts"
   ],
   "sideEffects": false,
   "engines": {
@@ -54,6 +56,12 @@
   },
   "dependencies": {
     "onnxruntime-web": "^1.31.1"
+  },
+  "pnpm": {
+    "allowBuilds": {
+      "esbuild": false,
+      "protobufjs": false
+    }
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

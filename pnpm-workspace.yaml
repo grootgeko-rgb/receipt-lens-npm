@@ -1,9 +1,0 @@
-# pnpm settings for this single-package repo (no workspace: the root is the only project).
-# Script-free installs: esbuild ships its binary through platform optionalDependencies
-# (@esbuild/linux-x64); its postinstall only re-downloads a fallback. protobufjs is the only
-# package in onnxruntime-web's dependency tree with an install hook; it only prints a version
-# WARN and generates no artifacts. Both are denied, mirroring the policy in
-# github.com/geko-rgb/receipt-lens.
-allowBuilds:
-  esbuild: false
-  protobufjs: false
