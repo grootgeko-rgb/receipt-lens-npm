@@ -52,7 +52,8 @@
     "build": "tsc -p . && node scripts/emit-dom-reference.mjs",
     "typecheck": "tsc -p . --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "onnxruntime-web": "^1.31.1"
