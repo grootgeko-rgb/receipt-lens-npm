@@ -246,13 +246,15 @@ export async function fetchModelManifest(
   fetchImpl: FetchLike = fetch,
   assetBaseUrl?: string,
 ): Promise<LoadedModelManifest> {
+  const missingHint =
+    " — is the model set downloaded? See README \"Downloading models\" (the package does not ship model binaries)";
   let response: Response;
   try {
     response = await fetchImpl(manifestUrl);
   } catch (cause) {
-    fail(`model manifest could not be fetched from ${manifestUrl}`, cause);
+    fail(`model manifest could not be fetched from ${manifestUrl}${missingHint}`, cause);
   }
-  if (!response.ok) fail(`model manifest ${manifestUrl} answered ${response.status}`);
+  if (!response.ok) fail(`model manifest ${manifestUrl} answered ${response.status}${missingHint}`);
 
   const text = await response.text();
   let raw: unknown;
@@ -284,13 +286,15 @@ export async function fetchModelManifest(
 
 /** Downloads one asset and verifies both its size and its content hash. */
 export async function fetchVerifiedAsset(asset: ModelAsset, fetchImpl: FetchLike = fetch): Promise<ArrayBuffer> {
+  const missingHint =
+    " — is the model set downloaded? See README \"Downloading models\" (the package does not ship model binaries)";
   let response: Response;
   try {
     response = await fetchImpl(asset.url);
   } catch (cause) {
-    fail(`model asset ${asset.file} could not be fetched`, cause);
+    fail(`model asset ${asset.file} could not be fetched from ${asset.url}${missingHint}`, cause);
   }
-  if (!response.ok) fail(`model asset ${asset.file} answered ${response.status}`);
+  if (!response.ok) fail(`model asset ${asset.file} answered ${response.status} at ${asset.url}${missingHint}`);
 
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength !== asset.bytes) {

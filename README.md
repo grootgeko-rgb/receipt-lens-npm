@@ -17,6 +17,38 @@ the app's own origin.
 npm install @receipt-lens/core
 ```
 
+### Downloading models
+
+The `pp-ocrv6` provider needs four files, served from your own origin:
+
+- `manifest.json` — pins each asset's byte size and SHA-256
+- `PP-OCRv6_tiny_det.onnx` — detection model
+- `PP-OCRv6_tiny_rec.onnx` — recognition model
+- `PP-OCRv6_tiny_rec.txt` — recognition dictionary
+
+Fetch them once and place them at the path you will pass as `assetBaseUrl`
+(default `/assets/models`):
+
+```bash
+mkdir -p public/assets/models
+cd public/assets/models
+curl -O https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/manifest.json
+curl -O https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/PP-OCRv6_tiny_det.onnx
+curl -O https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/PP-OCRv6_tiny_rec.onnx
+curl -O https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/PP-OCRv6_tiny_rec.txt
+# wget alternative (same four URLs):
+# wget https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/manifest.json
+# wget https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/PP-OCRv6_tiny_det.onnx
+# wget https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/PP-OCRv6_tiny_rec.onnx
+# wget https://raw.githubusercontent.com/geko-rgb/receipt-lens/main/assets/models/PP-OCRv6_tiny_rec.txt
+```
+
+**This package does not ship model binaries. See [Downloading models](#downloading-models) above
+before calling `extract()`** — a missing asset fails with `MODEL_LOAD_FAILED`.
+
+The set is also committed in this repository under `test-assets/models/` (test-only; never shipped in
+the npm tarball) if you prefer to copy it directly.
+
 One call, if you want one:
 
 ```ts
@@ -133,7 +165,8 @@ const provider: OcrProvider = createPPOCRv6Provider({ assetBaseUrl: "/models/" }
 
 Assets — detection model, recognition model, dictionary — are served from your own origin, listed in
 a manifest that pins each asset's byte size and SHA-256; the provider verifies both before it
-compiles anything. Model binaries are not shipped inside this package; the cache key is the manifest
+compiles anything. Model binaries are not shipped inside this package — see
+[Downloading models](#downloading-models); the cache key is the manifest
 hash. Serve the set from `test-assets/models/` in this repository at the path you pass.
 
 ### `assetBaseUrl`
