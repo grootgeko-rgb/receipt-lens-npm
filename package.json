@@ -49,7 +49,7 @@
   },
   "packageManager": "pnpm@12.16.1",
   "scripts": {
-    "build": "tsc -p .",
+    "build": "tsc -p . && node scripts/emit-dom-reference.mjs",
     "typecheck": "tsc -p . --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "prepublishOnly": "npm run build"
