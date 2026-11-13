@@ -173,10 +173,14 @@ export class PPOCRv6Provider implements OcrProvider {
   }
 
   private async loadInternal(): Promise<void> {
-    const base = this.options.assetBaseUrl ?? "/assets/models/";
-    const manifestUrl = this.options.manifestUrl ?? `${base}manifest.json`;
-
-    const loaded: LoadedModelManifest = await fetchModelManifest(manifestUrl, this.fetcher);
+    const base = this.options.assetBaseUrl;
+    // A bare base (`/models`) must not concatenate into `/modelsmanifest.json`; normalize once and
+    // use the same normalized value for both the manifest path and the asset rebase.
+    const normalizedBase = base === undefined || base.endsWith("/") ? base : `${base}/`;
+    const manifestUrl = this.options.manifestUrl ?? `${normalizedBase ?? "/assets/models/"}manifest.json`;
+    // `normalizedBase` rebases the asset URLs too, so `assetBaseUrl` alone moves the whole model set.
+    // When the option is absent, the loader leaves `asset.url` untouched (see fetchModelManifest).
+    const loaded: LoadedModelManifest = await fetchModelManifest(manifestUrl, this.fetcher, normalizedBase);
     const { manifest, manifestHash } = loaded;
 
     const [detBytes, recBytes, dictBytes] = await Promise.all([

@@ -218,10 +218,34 @@ function parseManifest(raw: unknown): ModelManifest {
 export type FetchLike = (input: string) => Promise<Response>;
 
 /**
+ * Re-points one asset's URL at `baseUrl`, keeping its file name.
+ *
+ * `asset.url` is a site-absolute path into the deployment that authored the manifest
+ * (`/assets/models/PP-OCRv6_tiny_det.onnx`). A consumer serving the same verified bytes from a
+ * different path passes `assetBaseUrl` and gets that prefix instead. The manifest on disk is not
+ * rewritten — only the object this loader returns.
+ */
+function rebaseAssetUrl(url: string, baseUrl: string): string {
+  const name = url.slice(url.lastIndexOf("/") + 1);
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return `${base}${name}`;
+}
+
+/**
  * Fetches and validates the model manifest. Only ever called against the app's own
  * origin — there is no third-party CDN fallback (PROJECT(1).md §9).
+ *
+ * `assetBaseUrl` is optional and additive: when it is omitted the manifest's own `asset.url`
+ * values are returned untouched, byte-for-byte as the previous behaviour. When it is supplied,
+ * every asset URL the returned `asset(role)` hands out is rebased onto it, so a host serving the
+ * verified bytes somewhere other than `/assets/models/` does not have to edit `manifest.json`.
+ * Sizes and hashes are not affected — the assets are the same bytes wherever they are served.
  */
-export async function fetchModelManifest(manifestUrl: string, fetchImpl: FetchLike = fetch): Promise<LoadedModelManifest> {
+export async function fetchModelManifest(
+  manifestUrl: string,
+  fetchImpl: FetchLike = fetch,
+  assetBaseUrl?: string,
+): Promise<LoadedModelManifest> {
   let response: Response;
   try {
     response = await fetchImpl(manifestUrl);
@@ -238,7 +262,14 @@ export async function fetchModelManifest(manifestUrl: string, fetchImpl: FetchLi
     fail(`model manifest ${manifestUrl} is not valid JSON`, cause);
   }
 
-  const manifest = parseManifest(raw);
+  const parsed = parseManifest(raw);
+  const manifest: ModelManifest =
+    assetBaseUrl === undefined
+      ? parsed
+      : {
+          ...parsed,
+          assets: parsed.assets.map((asset) => ({ ...asset, url: rebaseAssetUrl(asset.url, assetBaseUrl) })),
+        };
   const manifestHash = await sha256Hex(new TextEncoder().encode(text));
   return {
     manifest,

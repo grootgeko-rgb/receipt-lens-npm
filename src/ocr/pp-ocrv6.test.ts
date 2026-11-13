@@ -314,3 +314,105 @@ describe("OCR geometry and decoding units", () => {
     expect(decoded.confidence).toBeCloseTo(0.9, 5);
   });
 });
+
+describe("assetBaseUrl rebases the model set", () => {
+  /** Serves the pinned manifest and assets from whatever prefix the caller asks for. */
+  function recordingFetch(requested: string[]): FetchLike {
+    return async (url: string) => {
+      requested.push(url);
+      if (url.endsWith("manifest.json")) return new Response(manifestText);
+      const file = url.slice(url.lastIndexOf("/") + 1);
+      const asset = manifest.assets.find((candidate) => candidate.file === file);
+      if (!asset) return new Response("not found", { status: 404 });
+      return new Response(new Uint8Array(await readFile(new URL(asset.file, modelsUrl))));
+    };
+  }
+
+  it("requests every asset under the configured base and none under the manifest's own", async () => {
+    const requested: string[] = [];
+    const provider = new PPOCRv6Provider({
+      assetBaseUrl: "/my-own-models",
+      fetch: recordingFetch(requested),
+      loadRuntime: async () =>
+        createRuntime({ detProbability: oneBlob, recOutput: (classes) => encodeText("TOTAL", classes) }),
+      environment,
+      numThreads: 1,
+    });
+
+    await provider.load();
+
+    expect(requested).toHaveLength(4);
+    expect(requested[0]).toBe("/my-own-models/manifest.json");
+    for (const url of requested) {
+      expect(url.startsWith("/my-own-models/")).toBe(true);
+    }
+    // The manifest's own absolute paths are gone, not merely prefixed alongside them.
+    expect(requested.some((url) => url.startsWith("/assets/models/"))).toBe(false);
+    expect(requested.slice(1)).toEqual([
+      "/my-own-models/PP-OCRv6_tiny_det.onnx",
+      "/my-own-models/PP-OCRv6_tiny_rec.onnx",
+      "/my-own-models/PP-OCRv6_tiny_rec.txt",
+    ]);
+  });
+
+  it("tolerates a base with or without a trailing slash", async () => {
+    for (const base of ["/models", "/models/"]) {
+      const requested: string[] = [];
+      const provider = new PPOCRv6Provider({
+        assetBaseUrl: base,
+        fetch: recordingFetch(requested),
+        loadRuntime: async () =>
+          createRuntime({ detProbability: oneBlob, recOutput: (classes) => encodeText("TOTAL", classes) }),
+        environment,
+        numThreads: 1,
+      });
+      await provider.load();
+      expect(requested).toEqual([
+        "/models/manifest.json",
+        "/models/PP-OCRv6_tiny_det.onnx",
+        "/models/PP-OCRv6_tiny_rec.onnx",
+        "/models/PP-OCRv6_tiny_rec.txt",
+      ]);
+    }
+  });
+
+  it("leaves the manifest's own urls untouched when assetBaseUrl is omitted", async () => {
+    const requested: string[] = [];
+    const provider = new PPOCRv6Provider({
+      fetch: recordingFetch(requested),
+      loadRuntime: async () =>
+        createRuntime({ detProbability: oneBlob, recOutput: (classes) => encodeText("TOTAL", classes) }),
+      environment,
+      numThreads: 1,
+    });
+
+    await provider.load();
+
+    // Default behaviour is unchanged, byte-for-byte: the manifest's absolute paths are used as-is.
+    expect(requested).toEqual([
+      "/assets/models/manifest.json",
+      "/assets/models/PP-OCRv6_tiny_det.onnx",
+      "/assets/models/PP-OCRv6_tiny_rec.onnx",
+      "/assets/models/PP-OCRv6_tiny_rec.txt",
+    ]);
+  });
+
+  it("still verifies size and hash after rebasing", async () => {
+    const requested: string[] = [];
+    const provider = new PPOCRv6Provider({
+      assetBaseUrl: "/my-own-models",
+      fetch: async (url: string) => {
+        requested.push(url);
+        if (url.endsWith("manifest.json")) return new Response(manifestText);
+        return new Response(new Uint8Array([0, 1, 2, 3]));
+      },
+      loadRuntime: async () =>
+        createRuntime({ detProbability: oneBlob, recOutput: (classes) => encodeText("TOTAL", classes) }),
+      environment,
+      numThreads: 1,
+    });
+
+    await expect(provider.load()).rejects.toMatchObject({ code: "MODEL_LOAD_FAILED" });
+    expect(requested.slice(1).every((url) => url.startsWith("/my-own-models/"))).toBe(true);
+  });
+});
